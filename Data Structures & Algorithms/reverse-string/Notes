@@ -1,0 +1,105 @@
+DSA Notes · Two Pointers
+
+Reverse a string, in place
+Walk two fingers in from both ends and swap as they pass. My notes on the idea, the one tricky bit, the code, and how to read the constraints.
+
+Two-pointer
+In-place · returns void
+Time O(n)
+Space O(1)
+LeetCode 344
+01
+The problem, in my words
+What am I actually being asked to do?
+
+I'm given an array of characters and I have to reverse it — but not by building a new reversed array. I have to change the same array. That's why the function returns nothing (void / None): the "answer" is the array itself, edited where it sits.
+
+So the whole game is: rearrange the existing slots. First character should end up last, last should end up first, and everything meets in the middle.
+
+02
+The idea — two pointers
+One finger at the start, one at the end, walking toward each other.
+
+Put a left pointer at index 0 and a right pointer at the last index. Swap the two characters they point to, then step left forward and right backward. Repeat.
+
+I keep going while left < right. The moment they meet or cross, every character has already been moved — so I stop. (In example one the right index starts at 3; in example two it starts at 6. The rule is the same: stop when the fingers touch.)
+
+R
+▲ L
+E
+V
+E
+R
+S
+E
+▲ R
+press Step to begin
+temp =
+–
+left = 0 right = 6
+Step ›
+Auto-play
+Reset
+03
+The twist I found
+Why a swap needs a third variable.
+
+Here's the bit that tripped me up. To swap two slots I can't just do a = b then b = a — the first line overwrites a, so the second line just copies the value back and both slots end up the same. The original value of a is gone.
+
+The fix — a temp variable
+Stash one value in a third variable first, then it's safe to overwrite. left → temp, then right → left, then temp → right. Nothing is lost. (Python lets you shortcut this with s[l], s[r] = s[r], s[l] — but a hidden temp is doing exactly this behind the scenes.)
+
+04
+The code
+Python — both the explicit-temp version and the clean one.
+
+reverse_string.py
+class Solution:
+    def reverseString(self, s: list[str]) -> None:
+        # modify s in place, return nothing
+        left, right = 0, len(s) - 1
+
+        while left < right:
+            # --- swap using a temp (the twist) ---
+            temp    = s[left]
+            s[left] = s[right]
+            s[right] = temp
+
+            # walk the pointers inward
+            left  += 1
+            right -= 1
+
+        # Pythonic one-liner for the same swap:
+        # s[left], s[right] = s[right], s[left]
+05
+Time & space
+Solve first, then account for the cost — like I planned.
+
+Time
+O(n)
+I touch each character once. It's really n/2 swaps, but we drop constants — so O(n).
+
+Space
+O(1)
+Only left, right, and one temp. No second array — the size doesn't grow with the input.
+
+06
+Reading the constraints
+What Big-O means, and how input size hints at the algorithm.
+
+What does Big-O actually mean? Think of n as the size of the input, and Big-O as roughly how the work grows as n grows. O(n) means "work grows in step with the input"; O(n²) means "double the input, quadruple the work."
+  
+The size limits in a problem are a hint about which complexity will survive. Rough guide:
+
+Input size (n)	Usually think about
+n ≤ 10	Almost anything — even O(n!) / brute force
+n ≤ 20	Backtracking / exponential may be possible
+n ≤ 100	O(n²) often fine
+n ≤ 1,000	O(n²) often okay
+n ≤ 10,000	O(n²) may be risky
+n ≤ 100,000	Prefer O(n log n) or O(n)
+n ≤ 1,000,000	Usually O(n) / O(log n)
+Not strict laws — rough guidelines. When in doubt, aim one tier faster than "just okay."
+
+reverse-string · two pointers
+note to future me →
