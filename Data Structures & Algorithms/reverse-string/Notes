@@ -1,586 +1,104 @@
-<title>Two-Pointer Reverse</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+DSA Notes · Two Pointers
+Reverse a string, in place
+Walk two fingers in from both ends and swap as they pass. My notes on the idea, the one tricky bit, the code, and how to read the constraints.
 
-<style>
-  :root {
-    --paper: #FBF9F5;
-    --surface: #FFFFFF;
-    --surface-sunk: #F1EEE7;
-    --ink: #1C2230;
-    --muted: #6A7080;
-    --hair: #E4DFD5;
-    --left: #CF5A3C;      /* left pointer — warm coral */
-    --left-soft: #F7E4DC;
-    --right: #14776B;     /* right pointer — deep teal */
-    --right-soft: #D7EAE6;
-    --struct: #3B49A6;    /* structural accent — indigo */
-    --struct-soft: #E3E5F4;
-    --code-bg: #1B2030;
-    --code-ink: #E7E9F0;
-    --shadow: 0 1px 2px rgba(28,34,48,.05), 0 12px 32px -18px rgba(28,34,48,.28);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --paper: #12141C;
-      --surface: #191C26;
-      --surface-sunk: #10121A;
-      --ink: #E9EAF0;
-      --muted: #9096A6;
-      --hair: #2A2E3B;
-      --left: #E8785A;
-      --left-soft: #3A241D;
-      --right: #3FB2A2;
-      --right-soft: #14322E;
-      --struct: #8A95E8;
-      --struct-soft: #22263F;
-      --code-bg: #0C0E15;
-      --code-ink: #E7E9F0;
-      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px -20px rgba(0,0,0,.6);
-    }
-  }
-  :root[data-theme="dark"] {
-    --paper: #12141C;
-    --surface: #191C26;
-    --surface-sunk: #10121A;
-    --ink: #E9EAF0;
-    --muted: #9096A6;
-    --hair: #2A2E3B;
-    --left: #E8785A;
-    --left-soft: #3A241D;
-    --right: #3FB2A2;
-    --right-soft: #14322E;
-    --struct: #8A95E8;
-    --struct-soft: #22263F;
-    --code-bg: #0C0E15;
-    --code-ink: #E7E9F0;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 40px -20px rgba(0,0,0,.6);
-  }
+Two-pointer
+In-place · returns void
+Time O(n)
+Space O(1)
+LeetCode 344
+01
+The problem, in my words
+What am I actually being asked to do?
 
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: "Hanken Grotesk", system-ui, sans-serif;
-    line-height: 1.65;
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap {
-    max-width: 760px;
-    margin: 0 auto;
-    padding: clamp(28px, 6vw, 72px) clamp(20px, 5vw, 36px) 96px;
-  }
+I'm given an array of characters and I have to reverse it — but not by building a new reversed array. I have to change the same array. That's why the function returns nothing (void / None): the "answer" is the array itself, edited where it sits.
 
-  /* ---- Masthead ---- */
-  .eyebrow {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .72rem;
-    letter-spacing: .22em;
-    text-transform: uppercase;
-    color: var(--struct);
-    margin: 0 0 14px;
-  }
-  h1 {
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 600;
-    font-size: clamp(2.3rem, 7vw, 3.4rem);
-    line-height: 1.02;
-    letter-spacing: -.01em;
-    text-wrap: balance;
-    margin: 0 0 .5rem;
-  }
-  h1 .flip { color: var(--left); }
-  .lede {
-    font-size: 1.12rem;
-    color: var(--muted);
-    max-width: 60ch;
-    margin: 0;
-  }
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 10px;
-    margin-top: 22px;
-  }
-  .tag {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .72rem;
-    letter-spacing: .04em;
-    padding: 5px 11px;
-    border-radius: 999px;
-    border: 1px solid var(--hair);
-    color: var(--muted);
-    background: var(--surface);
-  }
-  .tag.on { color: var(--struct); border-color: color-mix(in srgb, var(--struct) 40%, var(--hair)); background: var(--struct-soft); }
+So the whole game is: rearrange the existing slots. First character should end up last, last should end up first, and everything meets in the middle.
 
-  /* ---- Section rhythm ---- */
-  section { margin-top: clamp(44px, 8vw, 72px); }
-  h2 {
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 600;
-    font-size: clamp(1.5rem, 4vw, 1.9rem);
-    letter-spacing: -.01em;
-    margin: 0 0 4px;
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-  }
-  h2 .n {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .8rem;
-    font-weight: 500;
-    color: var(--struct);
-    letter-spacing: .04em;
-  }
-  .sub { color: var(--muted); margin: 0 0 22px; font-size: .98rem; }
-  p { margin: 0 0 1rem; }
-  p a { color: var(--struct); }
-  strong { font-weight: 600; }
-  .lc { color: var(--left); font-weight: 600; }
-  .rc { color: var(--right); font-weight: 600; }
+02
+The idea — two pointers
+One finger at the start, one at the end, walking toward each other.
 
-  /* ---- Cards & callouts ---- */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--hair);
-    border-radius: 16px;
-    padding: clamp(20px, 4vw, 30px);
-    box-shadow: var(--shadow);
-  }
-  .note {
-    border-left: 3px solid var(--left);
-    background: var(--left-soft);
-    border-radius: 0 12px 12px 0;
-    padding: 16px 20px;
-    margin: 22px 0;
-  }
-  .note h4 {
-    margin: 0 0 6px;
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .74rem;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--left);
-  }
-  .note p { margin: 0; font-size: .97rem; }
+Put a left pointer at index 0 and a right pointer at the last index. Swap the two characters they point to, then step left forward and right backward. Repeat.
 
-  /* ---- Visualizer ---- */
-  .viz { text-align: center; }
-  .tiles {
-    display: flex;
-    justify-content: center;
-    gap: clamp(6px, 1.6vw, 12px);
-    flex-wrap: wrap;
-    margin: 8px 0 4px;
-  }
-  .cell { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .tile {
-    width: clamp(38px, 9vw, 58px);
-    height: clamp(46px, 11vw, 66px);
-    display: grid;
-    place-items: center;
-    font-family: "Fraunces", Georgia, serif;
-    font-size: clamp(1.3rem, 4vw, 1.9rem);
-    font-weight: 600;
-    border-radius: 12px;
-    background: var(--surface-sunk);
-    border: 1.5px solid var(--hair);
-    color: var(--ink);
-    transition: transform .28s ease, background .28s ease, border-color .28s ease, color .28s ease;
-  }
-  .tile.at-left  { border-color: var(--left);  background: var(--left-soft);  color: var(--left); }
-  .tile.at-right { border-color: var(--right); background: var(--right-soft); color: var(--right); }
-  .tile.locked   { border-color: color-mix(in srgb, var(--struct) 45%, var(--hair)); background: var(--struct-soft); color: var(--ink); }
-  .tile.pop { transform: translateY(-8px) scale(1.06); }
-  .ptr {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .7rem;
-    font-weight: 600;
-    letter-spacing: .06em;
-    min-height: 1.1em;
-  }
-  .ptr.l { color: var(--left); }
-  .ptr.r { color: var(--right); }
+I keep going while left < right. The moment they meet or cross, every character has already been moved — so I stop. (In example one the right index starts at 3; in example two it starts at 6. The rule is the same: stop when the fingers touch.)
 
-  .swapbar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    margin: 18px 0 4px;
-    min-height: 40px;
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .82rem;
-    color: var(--muted);
-  }
-  .temp {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    border-radius: 10px;
-    border: 1.5px dashed var(--hair);
-    color: var(--muted);
-    transition: all .28s ease;
-  }
-  .temp.hot { border-color: var(--struct); border-style: solid; color: var(--struct); background: var(--struct-soft); }
-  .temp b { font-family: "Fraunces", serif; font-size: 1.05rem; color: var(--ink); }
+R
+▲ L
+E
+V
+E
+R
+S
+E
+▲ R
+press Step to begin
+temp =
+–
+left = 0 right = 6
+Step ›
+Auto-play
+Reset
+03
+The twist I found
+Why a swap needs a third variable.
 
-  .status {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .8rem;
-    color: var(--muted);
-    min-height: 1.2em;
-    margin-top: 6px;
-  }
-  .status.done { color: var(--right); }
+Here's the bit that tripped me up. To swap two slots I can't just do a = b then b = a — the first line overwrites a, so the second line just copies the value back and both slots end up the same. The original value of a is gone.
 
-  .controls {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 22px;
-  }
-  button {
-    font-family: "Hanken Grotesk", sans-serif;
-    font-size: .92rem;
-    font-weight: 600;
-    cursor: pointer;
-    border-radius: 10px;
-    padding: 10px 18px;
-    border: 1px solid var(--hair);
-    background: var(--surface);
-    color: var(--ink);
-    transition: transform .1s ease, background .2s ease, border-color .2s ease;
-  }
-  button:hover { border-color: var(--struct); }
-  button:active { transform: translateY(1px); }
-  button.primary { background: var(--struct); border-color: var(--struct); color: #fff; }
-  button:focus-visible { outline: 2px solid var(--struct); outline-offset: 2px; }
-  button:disabled { opacity: .45; cursor: default; }
+The fix — a temp variable
+Stash one value in a third variable first, then it's safe to overwrite. left → temp, then right → left, then temp → right. Nothing is lost. (Python lets you shortcut this with s[l], s[r] = s[r], s[l] — but a hidden temp is doing exactly this behind the scenes.)
 
-  /* ---- Code ---- */
-  .codewrap { overflow-x: auto; border-radius: 14px; box-shadow: var(--shadow); }
-  pre {
-    margin: 0;
-    background: var(--code-bg);
-    color: var(--code-ink);
-    padding: 22px 24px;
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .88rem;
-    line-height: 1.7;
-    min-width: 460px;
-  }
-  pre .kw { color: #C792EA; }
-  pre .fn { color: #82AAFF; }
-  pre .cm { color: #6C7793; font-style: italic; }
-  pre .st { color: #C3E88D; }
-  pre .nu { color: #F78C6C; }
-  .filerow {
-    display: flex; align-items: center; gap: 8px;
-    background: color-mix(in srgb, var(--code-bg) 100%, #000 0%);
-    padding: 10px 16px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .74rem;
-    color: #9AA3BE;
-  }
-  .dot { width: 11px; height: 11px; border-radius: 50%; }
+04
+The code
+Python — both the explicit-temp version and the clean one.
 
-  /* ---- Complexity chips ---- */
-  .cxrow { display: flex; gap: 14px; flex-wrap: wrap; }
-  .cx {
-    flex: 1 1 200px;
-    background: var(--surface);
-    border: 1px solid var(--hair);
-    border-radius: 14px;
-    padding: 18px 20px;
-  }
-  .cx .lbl { font-family: "IBM Plex Mono", monospace; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-  .cx .big { font-family: "Fraunces", serif; font-size: 2rem; font-weight: 600; margin: 4px 0 2px; }
-  .cx.time .big { color: var(--struct); }
-  .cx.space .big { color: var(--right); }
-  .cx .why { font-size: .9rem; color: var(--muted); margin: 0; }
+reverse_string.py
+class Solution:
+    def reverseString(self, s: list[str]) -> None:
+        # modify s in place, return nothing
+        left, right = 0, len(s) - 1
 
-  /* ---- Big-O table ---- */
-  .tablewrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--hair); box-shadow: var(--shadow); }
-  table { border-collapse: collapse; width: 100%; min-width: 440px; background: var(--surface); }
-  th, td { text-align: left; padding: 13px 18px; border-bottom: 1px solid var(--hair); }
-  thead th {
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .72rem;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    background: var(--surface-sunk);
-  }
-  tbody tr:last-child td { border-bottom: none; }
-  td.size { font-family: "IBM Plex Mono", monospace; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .bo { font-family: "IBM Plex Mono", monospace; font-weight: 600; }
-  .bo.g { color: var(--right); }
-  .bo.a { color: var(--struct); }
-  .bo.r { color: var(--left); }
-  .caption { font-size: .86rem; color: var(--muted); margin-top: 12px; text-align: center; }
-
-  footer {
-    margin-top: 72px;
-    padding-top: 24px;
-    border-top: 1px solid var(--hair);
-    font-family: "IBM Plex Mono", monospace;
-    font-size: .76rem;
-    color: var(--muted);
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; }
-  }
-</style>
-
-<div class="wrap">
-
-  <header>
-    <p class="eyebrow">DSA Notes · Two Pointers</p>
-    <h1>Reverse a string, <span class="flip">in place</span></h1>
-    <p class="lede">Walk two fingers in from both ends and swap as they pass. My notes on the idea, the one tricky bit, the code, and how to read the constraints.</p>
-    <div class="meta">
-      <span class="tag on">Two-pointer</span>
-      <span class="tag">In-place · returns void</span>
-      <span class="tag">Time O(n)</span>
-      <span class="tag">Space O(1)</span>
-      <span class="tag">LeetCode 344</span>
-    </div>
-  </header>
-
-  <section>
-    <h2><span class="n">01</span> The problem, in my words</h2>
-    <p class="sub">What am I actually being asked to do?</p>
-    <p>I'm given an array of characters and I have to <strong>reverse it</strong> — but not by building a new reversed array. I have to change <em>the same array</em>. That's why the function returns <strong>nothing</strong> (void / <code>None</code>): the "answer" is the array itself, edited where it sits.</p>
-    <p>So the whole game is: rearrange the existing slots. First character should end up last, last should end up first, and everything meets in the middle.</p>
-  </section>
-
-  <section>
-    <h2><span class="n">02</span> The idea — two pointers</h2>
-    <p class="sub">One finger at the start, one at the end, walking toward each other.</p>
-    <p>Put a <span class="lc">left pointer</span> at index <code>0</code> and a <span class="rc">right pointer</span> at the last index. <strong>Swap</strong> the two characters they point to, then step <span class="lc">left</span> forward and <span class="rc">right</span> backward. Repeat.</p>
-    <p>I keep going <strong>while <span class="lc">left</span> &lt; <span class="rc">right</span></strong>. The moment they meet or cross, every character has already been moved — so I stop. (In example one the right index starts at <code>3</code>; in example two it starts at <code>6</code>. The rule is the same: stop when the fingers touch.)</p>
-
-    <div class="card viz" id="viz">
-      <div class="tiles" id="tiles"></div>
-      <div class="swapbar">
-        <span id="swaptext">press <b style="font-family:inherit;color:var(--ink)">Step</b> to begin</span>
-        <span class="temp" id="temp">temp = <b>–</b></span>
-      </div>
-      <div class="status" id="status">left = 0 &nbsp; right = 6</div>
-      <div class="controls">
-        <button class="primary" id="stepBtn">Step ›</button>
-        <button id="autoBtn">Auto-play</button>
-        <button id="resetBtn">Reset</button>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <h2><span class="n">03</span> The twist I found</h2>
-    <p class="sub">Why a swap needs a third variable.</p>
-    <p>Here's the bit that tripped me up. To swap two slots I can't just do <code>a = b</code> then <code>b = a</code> — the first line <strong>overwrites</strong> <code>a</code>, so the second line just copies the value back and both slots end up the same. The original value of <code>a</code> is gone.</p>
-    <div class="note">
-      <h4>The fix — a temp variable</h4>
-      <p>Stash one value in a <strong>third variable</strong> first, then it's safe to overwrite. <span class="lc">left</span> → <code>temp</code>, then <span class="rc">right</span> → <span class="lc">left</span>, then <code>temp</code> → <span class="rc">right</span>. Nothing is lost. (Python lets you shortcut this with <code>s[l], s[r] = s[r], s[l]</code> — but a hidden temp is doing exactly this behind the scenes.)</p>
-    </div>
-  </section>
-
-  <section>
-    <h2><span class="n">04</span> The code</h2>
-    <p class="sub">Python — both the explicit-temp version and the clean one.</p>
-    <div class="codewrap">
-      <div class="filerow">
-        <span class="dot" style="background:#FF5F56"></span>
-        <span class="dot" style="background:#FFBD2E"></span>
-        <span class="dot" style="background:#27C93F"></span>
-        <span style="margin-left:6px">reverse_string.py</span>
-      </div>
-<pre><span class="kw">class</span> <span class="fn">Solution</span>:
-    <span class="kw">def</span> <span class="fn">reverseString</span>(self, s: list[str]) -> <span class="kw">None</span>:
-        <span class="cm"># modify s in place, return nothing</span>
-        left, right = <span class="nu">0</span>, <span class="fn">len</span>(s) - <span class="nu">1</span>
-
-        <span class="kw">while</span> left &lt; right:
-            <span class="cm"># --- swap using a temp (the twist) ---</span>
+        while left < right:
+            # --- swap using a temp (the twist) ---
             temp    = s[left]
             s[left] = s[right]
             s[right] = temp
 
-            <span class="cm"># walk the pointers inward</span>
-            left  += <span class="nu">1</span>
-            right -= <span class="nu">1</span>
+            # walk the pointers inward
+            left  += 1
+            right -= 1
 
-        <span class="cm"># Pythonic one-liner for the same swap:</span>
-        <span class="cm"># s[left], s[right] = s[right], s[left]</span></pre>
-    </div>
-  </section>
+        # Pythonic one-liner for the same swap:
+        # s[left], s[right] = s[right], s[left]
+05
+Time & space
+Solve first, then account for the cost — like I planned.
 
-  <section>
-    <h2><span class="n">05</span> Time &amp; space</h2>
-    <p class="sub">Solve first, then account for the cost — like I planned.</p>
-    <div class="cxrow">
-      <div class="cx time">
-        <div class="lbl">Time</div>
-        <div class="big">O(n)</div>
-        <p class="why">I touch each character once. It's really n/2 swaps, but we drop constants — so O(n).</p>
-      </div>
-      <div class="cx space">
-        <div class="lbl">Space</div>
-        <div class="big">O(1)</div>
-        <p class="why">Only <code>left</code>, <code>right</code>, and one <code>temp</code>. No second array — the size doesn't grow with the input.</p>
-      </div>
-    </div>
-  </section>
+Time
+O(n)
+I touch each character once. It's really n/2 swaps, but we drop constants — so O(n).
 
-  <section>
-    <h2><span class="n">06</span> Reading the constraints</h2>
-    <p class="sub">What Big-O means, and how input size hints at the algorithm.</p>
-    <p><strong>What does Big-O actually mean?</strong> Think of <code>n</code> as the <strong>size of the input</strong>, and Big-O as roughly <em>how the work grows as n grows</em>. O(n) means "work grows in step with the input"; O(n²) means "double the input, quadruple the work."</p>
-    <p>The size limits in a problem are a <strong>hint</strong> about which complexity will survive. Rough guide:</p>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr><th>Input size (n)</th><th>Usually think about</th></tr>
-        </thead>
-        <tbody>
-          <tr><td class="size">n ≤ 10</td><td>Almost anything — even <span class="bo r">O(n!)</span> / brute force</td></tr>
-          <tr><td class="size">n ≤ 20</td><td>Backtracking / <span class="bo a">exponential</span> may be possible</td></tr>
-          <tr><td class="size">n ≤ 100</td><td><span class="bo a">O(n²)</span> often fine</td></tr>
-          <tr><td class="size">n ≤ 1,000</td><td><span class="bo a">O(n²)</span> often okay</td></tr>
-          <tr><td class="size">n ≤ 10,000</td><td><span class="bo a">O(n²)</span> may be risky</td></tr>
-          <tr><td class="size">n ≤ 100,000</td><td>Prefer <span class="bo g">O(n log n)</span> or <span class="bo g">O(n)</span></td></tr>
-          <tr><td class="size">n ≤ 1,000,000</td><td>Usually <span class="bo g">O(n)</span> / <span class="bo g">O(log n)</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="caption">Not strict laws — rough guidelines. When in doubt, aim one tier faster than "just okay."</p>
-  </section>
+Space
+O(1)
+Only left, right, and one temp. No second array — the size doesn't grow with the input.
 
-  <footer>
-    <span>reverse-string · two pointers</span>
-    <span>note to future me →</span>
-  </footer>
-</div>
+06
+Reading the constraints
+What Big-O means, and how input size hints at the algorithm.
 
-<script>
-(function () {
-  var WORD = "REVERSE".split("");
-  var tilesEl = document.getElementById("tiles");
-  var tempEl  = document.getElementById("temp");
-  var swapTx  = document.getElementById("swaptext");
-  var statusEl= document.getElementById("status");
-  var stepBtn = document.getElementById("stepBtn");
-  var autoBtn = document.getElementById("autoBtn");
-  var resetBtn= document.getElementById("resetBtn");
+What does Big-O actually mean? Think of n as the size of the input, and Big-O as roughly how the work grows as n grows. O(n) means "work grows in step with the input"; O(n²) means "double the input, quadruple the work."
 
-  var chars, left, right, done, phase, autoTimer = null;
+The size limits in a problem are a hint about which complexity will survive. Rough guide:
 
-  function build() {
-    chars = WORD.slice();
-    left = 0; right = chars.length - 1; done = false; phase = 0;
-    render();
-    swapTx.innerHTML = 'press <b style="font-family:inherit;color:var(--ink)">Step</b> to begin';
-    tempEl.classList.remove("hot");
-    tempEl.innerHTML = "temp = <b>–</b>";
-    statusEl.classList.remove("done");
-    statusEl.textContent = "left = 0   right = " + (chars.length - 1);
-    stepBtn.disabled = false;
-  }
+Input size (n)	Usually think about
+n ≤ 10	Almost anything — even O(n!) / brute force
+n ≤ 20	Backtracking / exponential may be possible
+n ≤ 100	O(n²) often fine
+n ≤ 1,000	O(n²) often okay
+n ≤ 10,000	O(n²) may be risky
+n ≤ 100,000	Prefer O(n log n) or O(n)
+n ≤ 1,000,000	Usually O(n) / O(log n)
+Not strict laws — rough guidelines. When in doubt, aim one tier faster than "just okay."
 
-  function render() {
-    tilesEl.innerHTML = "";
-    for (var i = 0; i < chars.length; i++) {
-      var cell = document.createElement("div");
-      cell.className = "cell";
-      var t = document.createElement("div");
-      t.className = "tile";
-      t.textContent = chars[i];
-      if (!done) {
-        if (i === left && left < right) t.classList.add("at-left");
-        else if (i === right && left < right) t.classList.add("at-right");
-        else if (i < left || i > right) t.classList.add("locked");
-      } else {
-        t.classList.add("locked");
-      }
-      var p = document.createElement("div");
-      p.className = "ptr";
-      if (!done && left < right && i === left) { p.classList.add("l"); p.textContent = "▲ L"; }
-      else if (!done && left < right && i === right) { p.classList.add("r"); p.textContent = "▲ R"; }
-      cell.appendChild(t);
-      cell.appendChild(p);
-      tilesEl.appendChild(cell);
-    }
-  }
-
-  function finish() {
-    done = true;
-    render();
-    swapTx.innerHTML = 'reversed → <b style="font-family:Fraunces,serif;color:var(--ink)">' + chars.join("") + '</b>';
-    tempEl.classList.remove("hot");
-    tempEl.innerHTML = "temp = <b>–</b>";
-    statusEl.classList.add("done");
-    statusEl.textContent = "left ≥ right — done ✓  (" + chars.join("") + ")";
-    stepBtn.disabled = true;
-    stopAuto();
-  }
-
-  function step() {
-    if (done) return;
-    if (left >= right) { finish(); return; }
-    // do one full swap with temp highlighted
-    var tmp = chars[left];
-    tempEl.classList.add("hot");
-    tempEl.innerHTML = "temp = <b>" + tmp + "</b>";
-    swapTx.innerHTML = 'swap <span class="lc">s['+left+']</span> ↔ <span class="rc">s['+right+']</span>';
-
-    var lTile = tilesEl.children[left] && tilesEl.children[left].firstChild;
-    var rTile = tilesEl.children[right] && tilesEl.children[right].firstChild;
-    if (lTile) lTile.classList.add("pop");
-    if (rTile) rTile.classList.add("pop");
-
-    var L = left, R = right;
-    setTimeout(function () {
-      chars[L] = chars[R];
-      chars[R] = tmp;
-      left++; right--;
-      render();
-      if (left < right) {
-        statusEl.textContent = "left = " + left + "   right = " + right;
-      } else {
-        statusEl.textContent = "left = " + left + "   right = " + right + "  (they meet)";
-      }
-      setTimeout(function(){ if (left >= right && !done) finish(); }, 120);
-    }, 320);
-  }
-
-  function stopAuto() {
-    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; autoBtn.textContent = "Auto-play"; }
-  }
-  function toggleAuto() {
-    if (autoTimer) { stopAuto(); return; }
-    if (done) build();
-    autoBtn.textContent = "Pause";
-    autoTimer = setInterval(function () {
-      if (done) { stopAuto(); return; }
-      step();
-    }, 900);
-  }
-
-  stepBtn.addEventListener("click", function () { stopAuto(); step(); });
-  autoBtn.addEventListener("click", toggleAuto);
-  resetBtn.addEventListener("click", function () { stopAuto(); build(); });
-
-  build();
-})();
-</script>
+reverse-string · two pointers
+note to future me → Visual notes link https://claude.ai/code/artifact/e709aed0-906b-4ada-9559-aaf09ac1d16c
